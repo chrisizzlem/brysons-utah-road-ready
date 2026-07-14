@@ -1,0 +1,12 @@
+const fs=require('fs'),vm=require('vm');
+const context={window:{}};vm.createContext(context);
+for(const file of ['data/questions.js','data/reviewed-questions.js']) vm.runInContext(fs.readFileSync(file,'utf8'),context);
+const bank=context.window.REVIEWED_QUESTIONS;
+const count=(items,key)=>items.reduce((out,item)=>{out[item[key]]=(out[item[key]]||0)+1;return out},{});
+const duplicateValues=values=>Object.entries(count(values.map(v=>({value:v})),'value')).filter(([,n])=>n>1);
+const duplicateStems=duplicateValues(bank.map(q=>q.question.trim().toLowerCase()));
+const duplicateOptions=duplicateValues(bank.map(q=>q.options.join('|').toLowerCase()));
+const invalid=bank.filter(q=>!q.question||q.options?.length!==4||!Number.isInteger(q.answer)||q.answer<0||q.answer>3||!q.explanation||!q.source);
+const report={count:bank.length,categories:count(bank,'category'),duplicates:{stems:duplicateStems.length,optionSets:duplicateOptions.length},invalid:invalid.length,visuals:bank.filter(q=>q.visual).length};
+console.log(JSON.stringify(report,null,2));
+if(report.count<300||invalid.length||duplicateStems.length||duplicateOptions.length) process.exitCode=1;

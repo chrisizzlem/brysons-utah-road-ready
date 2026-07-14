@@ -1,0 +1,23 @@
+{
+  "source": "Utah Driver Handbook REV 3.2026",
+  "editorialStatus": "active rewrite",
+  "questionTarget": 300,
+  "standards": [
+    "Every record tests one specific rule, sign, decision, or driving judgment.",
+    "No answer may be made correct merely by its length, tone, or absolute wording.",
+    "Scenario questions state the road condition, traffic conflict, and requested action clearly.",
+    "Each explanation states both the rule and why the other action is unsafe or unlawful when useful.",
+    "Each graphic is instructional, includes accessible text, and is tied to a specific learning objective."
+  ],
+  "coverage": [
+    {"topic":"Licensing, permits, teen requirements, examinations","target":28,"handbookSections":["2","3","6"]},
+    {"topic":"Vehicle preparation, restraints, car seats, air bags","target":18,"handbookSections":["7"]},
+    {"topic":"Basic driving: backing, lanes, parking, passing, signals, turns","target":45,"handbookSections":["8"]},
+    {"topic":"Rules of road: freeways, intersections, markings, speed, roundabouts, controls","target":70,"handbookSections":["9"]},
+    {"topic":"Alcohol, drugs, under-21 and Utah BAC law","target":25,"handbookSections":["10"]},
+    {"topic":"Distraction, work zones, night, weather, mountain and rural driving","target":35,"handbookSections":["11"]},
+    {"topic":"Crashes, emergencies, insurance and financial responsibility","target":30,"handbookSections":["12"]},
+    {"topic":"Bicycles, emergency vehicles, trucks, motorcycles, pedestrians, railroads","target":49,"handbookSections":["14"]}
+  ],
+  "visualObjectives":["sign identification","lane markings","four-way stop order","left-turn yield","roundabout entry","freeway merge","school-bus stopping rule","railroad crossing","pedestrian conflict","bicycle passing","winter traction","mountain-grade control"]
+}
