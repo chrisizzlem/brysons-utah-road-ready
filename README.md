@@ -13,6 +13,7 @@ A mobile-first, single-page study app for the Utah written driver knowledge test
 - Guided mistake recovery: related practice first, then a delayed retry
 - Local browser storage for progress, XP, streaks, scores, and readiness
 - Personalized encouragement for Bryson
+- A coach-led home screen that recommends one next activity, then groups alternate paths by purpose
 - Readiness estimate based on accuracy, topic coverage, and recent sessions
 - No server, login, database, or external API required
 

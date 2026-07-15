@@ -1,4 +1,4 @@
-# Bryson's Utah Road Ready — v1.2.4
+# Bryson's Utah Road Ready — v1.3.0
 
 Saved July 14, 2026.
 
@@ -13,3 +13,5 @@ v1.2.2 separates visual lessons from their knowledge checks so teaching steps ne
 v1.2.3 changes visual lessons to question-first: the visual and teaching steps are revealed only after Bryson answers.
 
 v1.2.4 keeps each visual diagram visible both with the question and in the post-answer explanation; only the teaching steps wait until after the answer.
+
+v1.3.0 makes the home screen coach-led: one adaptive recommended next step comes first, with the remaining learning modes organized by purpose and topic practice tucked into an optional picker.

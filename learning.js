@@ -59,6 +59,52 @@
     if (open) return `${open} concept${open === 1 ? '' : 's'} need repair. Related questions will come first, then the original rule returns later.`;
     return `${strongestCategory()} is your strongest area right now. ${weakestCategory()} is the best place to earn the next meaningful improvement.`;
   }
+  function totalAnswers() {
+    return Object.values(state.history).reduce((sum, history) => sum + (history.a || 0), 0);
+  }
+  function recommendation() {
+    const openMisses = state.missed.filter((item) => !item.recovered).length;
+    const total = totalAnswers();
+    const weakest = weakestCategory();
+    const weakestStats = categoryStats(weakest);
+    if (openMisses) return {
+      mode: 'recovery',
+      label: 'Coach’s recommendation',
+      title: `Repair ${openMisses} missed rule${openMisses === 1 ? '' : 's'}`,
+      detail: 'Related questions first · about 4–10 questions',
+      reason: 'You will rebuild the underlying idea before the original question comes back. That is more useful than simply repeating a miss.',
+      action: 'Start recovery'
+    };
+    if (total < 20) return {
+      mode: 'smart',
+      label: 'Coach’s recommendation',
+      title: 'Build your baseline',
+      detail: 'Adaptive mixed practice · about 5–8 minutes',
+      reason: 'A short mixed round gives the coach enough evidence to find the right next focus for you.',
+      action: 'Start Smart Practice'
+    };
+    if (weakestStats.attempts < 8 || weakestStats.percent < 75) return {
+      mode: 'topic',
+      category: weakest,
+      label: 'Coach’s recommendation',
+      title: `Strengthen ${weakest}`,
+      detail: `${weakestStats.attempts ? `${weakestStats.percent}% so far` : 'New topic'} · about 5–8 minutes`,
+      reason: `${weakest} is the clearest opportunity to raise your overall readiness right now.`,
+      action: `Practice ${weakest}`
+    };
+    return {
+      mode: 'smart',
+      label: 'Coach’s recommendation',
+      title: 'Keep your strongest momentum going',
+      detail: 'Adaptive mixed practice · about 5–8 minutes',
+      reason: 'You have a solid base. A balanced round will protect what you know while bringing overdue material back at the right time.',
+      action: 'Start Smart Practice'
+    };
+  }
+  function startRecommended() {
+    const next = recommendation();
+    start(next.mode, next.category);
+  }
 
   function dashboard() {
     window.ACTIVE_STUDY_QUESTION = null;
@@ -66,34 +112,41 @@
     const weekly = weeklyCount();
     const badges = achievements();
     const openMisses = state.missed.filter((item) => !item.recovered).length;
+    const next = recommendation();
     $('#xp').textContent = state.xp;
     $('#app').innerHTML = `
-      <section class="hero">
-        <article class="card">
-          <div class="eyebrow">Learning plan</div>
-          <h1>Understand the rule, then use it.</h1>
-          <p class="muted">${openMisses ? `${openMisses} rule${openMisses === 1 ? '' : 's'} are waiting for a structured recovery—not a repeat loop.` : 'Build recognition with visuals, then practice the next decision in a real Utah driving situation.'}</p>
-          <div class="row">
-            <button class="btn primary" onclick="learningStart('smart')">Smart Practice</button>
-            <button class="btn soft" onclick="learningStart('recovery')">Mistake recovery${openMisses ? ` · ${openMisses}` : ''}</button>
-            <button class="btn plain" onclick="learningStart('visual')">Visual lessons</button>
-            <button class="btn plain" onclick="learningStart('hazard')">Hazard Lab</button>
-          </div>
-        </article>
-        <aside class="card">
+      <section class="coach-next card">
+        <div class="coach-copy">
+          <div class="eyebrow">${next.label}</div>
+          <h1>${esc(next.title)}</h1>
+          <p class="muted">${esc(next.reason)}</p>
+          <small class="recommendation-detail">${esc(next.detail)}</small>
+        </div>
+        <div class="coach-action"><button class="btn primary" onclick="startRecommended()">${esc(next.action)}</button></div>
+      </section>
+      <section class="home-snapshot">
+        <article class="card coach-note"><div class="eyebrow">Coach’s notes</div><b>${esc(coach())}</b></article>
+        <aside class="card weekly-card">
           <b>${weekly}/${state.weeklyGoal}</b>
           <p class="muted">weekly question goal</p>
           <div class="bar"><i style="width:${Math.min(100, weekly / state.weeklyGoal * 100)}%"></i></div>
           <p class="muted">${badges.length ? badges.join(' · ') : 'Your first achievement is waiting.'}</p>
         </aside>
       </section>
-      <h2>Coach’s notes</h2>
-      <article class="card"><b>${coach()}</b><p class="muted">Recommended: ${openMisses ? 'Mistake recovery' : 'Visual lessons, then Smart Practice'}</p></article>
-      <h2>Study by topic</h2>
-      <section class="topics">${categories.map((category) => {
+      <section class="study-section">
+        <div class="section-heading"><div><h2>Choose a study path</h2><p class="muted">Pick the kind of practice you want. The coach will still adapt the questions inside it.</p></div></div>
+        <div class="path-grid">
+          <button class="card path-card" onclick="learningStart('smart')"><span class="path-kicker">Practice</span><b>Smart Practice</b><p>Balanced questions chosen for weak areas, overdue review, and new coverage.</p><small>About 5–8 minutes</small></button>
+          <button class="card path-card" onclick="learningStart('recovery')"><span class="path-kicker">Repair</span><b>Mistake Recovery${openMisses ? ` · ${openMisses}` : ''}</b><p>Relearn missed rules through connected questions before retrying the original.</p><small>${openMisses ? 'Targeted review ready' : 'Opens mixed review when clear'}</small></button>
+          <button class="card path-card" onclick="learningStart('visual')"><span class="path-kicker">Learn visually</span><b>Visual Lessons</b><p>Read a road setup, make the call, then see the rule explained with the diagram.</p><small>9 illustrated lessons</small></button>
+          <button class="card path-card" onclick="learningStart('hazard')"><span class="path-kicker">Apply it</span><b>Hazard Lab</b><p>Practice next-step decisions in realistic Utah driving situations.</p><small>10 scenario challenges</small></button>
+          <button class="card path-card test-path" onclick="startPracticeExam()"><span class="path-kicker">Test yourself</span><b>Practice Exam</b><p>Take a fixed 50-question simulation with no feedback until your results.</p><small>About 45–60 minutes</small></button>
+        </div>
+      </section>
+      <details class="topic-picker"><summary>Or choose one topic</summary><p class="muted">Use this when you know exactly what you want to work on.</p><section class="topics">${categories.map((category) => {
         const stats = categoryStats(category);
         return `<button class="card topic" onclick="learningStart('topic','${esc(category)}')"><b>${esc(category)}</b><small class="muted">${stats.attempts ? `${stats.percent}% · ${stats.attempts} attempts` : 'New'}</small><div class="bar"><i style="width:${stats.percent}%"></i></div></button>`;
-      }).join('')}</section>
+      }).join('')}</section></details>
       <h2>Theme</h2>
       <div class="row">${['classic', 'night', 'snow'].map((theme) => `<button class="btn ${state.theme === theme ? 'primary' : 'plain'}" onclick="setTheme('${theme}')">${theme}</button>`).join('')}</div>`;
   }
@@ -267,8 +320,12 @@
   window.learningAnswer = answer;
   window.learningNext = next;
   window.learningDash = dashboard;
+  window.startRecommended = startRecommended;
+  window.startPracticeExam = () => window.start('exam');
+  window.dashboard = dashboard;
   window.setTheme = (theme) => { state.theme = theme; save(); dashboard(); };
   document.head.insertAdjacentHTML('beforeend', '<style>.teaching-question{overflow:hidden}.teaching-scene{position:relative;height:176px;margin:8px 0 18px;border-radius:16px;overflow:hidden;background:linear-gradient(#cbe5f7 0 46%,#6d7888 46%);border:1px solid #bad1e1}.teaching-scene figcaption{position:absolute;left:12px;bottom:9px;z-index:4;max-width:80%;padding:4px 8px;border-radius:8px;background:#112840d9;color:#fff;font-size:12px;font-weight:700}.scene-road{position:absolute;background:#4b5563}.road-h{left:-4%;right:-4%;height:48px;top:68px;border-top:2px dashed #ffe08a;border-bottom:2px dashed #ffe08a}.road-v{top:-10%;bottom:-10%;width:48px;left:calc(50% - 24px);border-left:2px dashed #ffe08a;border-right:2px dashed #ffe08a}.scene-car{position:absolute;width:38px;height:20px;border-radius:6px;background:#2265e5;box-shadow:0 2px 0 #163d90;left:26%;top:82px;z-index:2}.scene-car::before,.scene-car::after{content:"";position:absolute;bottom:-4px;width:8px;height:4px;background:#1d2938;border-radius:3px}.scene-car::before{left:5px}.scene-car::after{right:5px}.driver-car{left:calc(50% - 14px);top:118px;width:28px;height:42px}.right-car{left:68%;top:78px;width:47px;height:27px;background:#f4972e;box-shadow:0 2px 0 #a75014}.scene-car b{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:19px}.scene-car small{position:absolute;white-space:nowrap;font-size:11px;font-weight:900;color:#112840;line-height:1.05;text-align:center}.driver-car small{top:13px;right:36px;padding:3px 5px;border-radius:5px;background:#112840e6;color:#fff}.right-car small{top:-29px;left:50%;transform:translateX(-50%)}.car-left{left:21%;top:83px}.car-oncoming{left:59%;top:55px;background:#f4972e}.car-ramp{left:21%;top:112px}.car-freeway{left:58%;top:68px;background:#f4972e}.scene-arrow{position:absolute;z-index:3;color:#fff;font-size:32px;font-weight:900}.arrow-curve{left:50%;top:67px;color:#2265e5}.arrow-merge{left:44%;top:91px}.arrow-left{left:46%;top:54px}.scene-circle{position:absolute;width:104px;height:104px;border:26px solid #4b5563;border-radius:50%;left:calc(50% - 52px);top:35px;box-shadow:inset 0 0 0 2px #ffe08a}.road-diagonal{width:170px;height:46px;transform:rotate(-26deg);top:109px;left:-10px;border-top:2px dashed #ffe08a}.scene-bus{position:absolute;z-index:2;left:35%;top:69px;width:94px;padding:10px 3px;background:#f5b72a;border-radius:7px;color:#8d1e1e;text-align:center;font-size:11px;font-weight:900}.scene-stop-arm{position:absolute;z-index:2;left:61%;top:76px;width:23px;height:23px;background:#c73434;border-radius:50%;border:2px solid white}.scene-person{position:absolute;z-index:2;left:69%;top:83px;color:#24364a;font-size:27px}.scene-rail{position:absolute;z-index:2;top:45px;bottom:30px;left:51%;width:31px;border-left:5px solid #422d2d;border-right:5px solid #422d2d;background:repeating-linear-gradient(0deg,transparent 0 10px,#b99364 10px 13px)}.scene-light{position:absolute;z-index:3;left:58%;top:35px;width:32px;height:32px;border-radius:50%;background:#c73434;color:#fff;text-align:center;padding-top:3px;font-weight:900}.scene-crosswalk{position:absolute;z-index:2;left:48%;top:68px;width:67px;height:48px;background:repeating-linear-gradient(90deg,#fff 0 7px,transparent 7px 14px);opacity:.9}.scene-bike{position:absolute;z-index:2;left:64%;top:80px;font-size:40px;color:#3e536d}.icy,.wet{background:linear-gradient(90deg,#6a7b89,#97aebe,#6a7b89)}.scene-snow,.scene-rain,.scene-fog{position:absolute;z-index:2;color:#fff;font-weight:900;font-size:32px;letter-spacing:16px;left:18%;top:26px;opacity:.92}.scene-ambulance{position:absolute;z-index:2;left:64%;top:80px;width:52px;height:25px;border-radius:5px;background:#fff;color:#c73434;text-align:center;font-size:20px;font-weight:900}.scene-truck{position:absolute;z-index:2;left:54%;top:70px;width:104px;height:33px;border-radius:5px;background:#eee;box-shadow:-30px 10px 0 #2265e5}.foggy{opacity:.7}.scene-copy{margin:0 0 12px;color:var(--muted);font-weight:650}.teach-steps{margin:0 0 16px;padding-left:23px;color:var(--ink)}.teach-steps li{margin:5px 0}.answer-review{margin-top:15px;border-top:1px solid #dbe5ef;padding-top:13px}.answer-reason{margin:8px 0;padding:9px 10px;border-radius:10px;background:#fff;border:1px solid #dbe5ef}.answer-reason.right{background:#edfbf2;border-color:#8bd3a8}.answer-reason.chosen-wrong{background:#fff3f3;border-color:#efabab}.answer-reason p{margin:4px 0 0;font-size:13px;line-height:1.4}.recovery-card h1{font-size:clamp(27px,6vw,40px);line-height:1.08}.recovery-rule{margin:18px 0;padding:15px;border-radius:13px;background:#eef4ff;line-height:1.5}@media(max-width:500px){.teaching-scene{height:156px}.driver-car{top:104px}.right-car{left:65%}.answer-reason{padding:8px}.teach-steps{font-size:14px}}</style>');
   document.head.insertAdjacentHTML('beforeend', '<style>.lesson-reveal{margin-top:18px;padding-top:18px;border-top:1px solid #cddbea}.lesson-reveal h3{margin:6px 0}.lesson-reveal p{line-height:1.5}</style>');
+  document.head.insertAdjacentHTML('beforeend', '<style>.coach-next{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:18px 0 14px;background:linear-gradient(135deg,#fff 0%,#f0f6ff 100%);border-color:#c7d8f4}.coach-copy{max-width:660px}.coach-next h1{font-size:clamp(29px,5vw,46px);letter-spacing:-1.4px;line-height:1.06;margin:7px 0}.coach-next p{max-width:630px;margin:0 0 10px}.recommendation-detail{display:inline-block;color:#315580;font-weight:800}.coach-action{flex:0 0 auto}.coach-action .btn{white-space:nowrap}.home-snapshot{display:grid;grid-template-columns:1.25fr .75fr;gap:12px}.coach-note b{display:block;line-height:1.45;margin-top:7px}.weekly-card b{font-size:25px}.weekly-card p{margin:3px 0 8px}.study-section{margin-top:30px}.section-heading h2{margin:0 0 3px}.section-heading p{margin:0 0 12px}.path-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.path-card{text-align:left;min-height:164px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}.path-card:hover,.path-card:focus-visible{transform:translateY(-2px);border-color:#93b6ef;box-shadow:0 10px 26px #162c4818}.path-card b{display:block;font-size:18px;margin:5px 0}.path-card p{margin:0 0 11px;color:var(--muted);font-size:14px;line-height:1.4}.path-card small{font-weight:800;color:#315580}.path-kicker{color:var(--blue);font-size:11px;letter-spacing:.07em;font-weight:900;text-transform:uppercase}.test-path{grid-column:span 2;min-height:auto}.topic-picker{margin-top:24px;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:#ffffff99}.topic-picker summary{cursor:pointer;font-weight:850;color:var(--ink)}.topic-picker p{margin:8px 0 13px}@media(max-width:650px){.coach-next{display:block}.coach-action{margin-top:16px}.coach-action .btn{width:100%}.home-snapshot{grid-template-columns:1fr}.path-grid{grid-template-columns:1fr}.test-path{grid-column:auto}}@media(prefers-reduced-motion:reduce){.path-card{transition:none}.path-card:hover,.path-card:focus-visible{transform:none}}</style>');
   dashboard();
 })();
