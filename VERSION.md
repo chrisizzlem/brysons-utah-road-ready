@@ -1,4 +1,4 @@
-# Bryson's Utah Road Ready — v1.2.2
+# Bryson's Utah Road Ready — v1.2.3
 
 Saved July 14, 2026.
 
@@ -9,3 +9,5 @@ v1.2.0 adds interactive visual lessons, Utah hazard-perception scenarios, answer
 v1.2.1 corrects the four-way-stop lesson diagram so the vehicle on Bryson's right is explicitly positioned and labeled at the east approach.
 
 v1.2.2 separates visual lessons from their knowledge checks so teaching steps never appear alongside the answer choices.
+
+v1.2.3 changes visual lessons to question-first: the visual and teaching steps are revealed only after Bryson answers.
