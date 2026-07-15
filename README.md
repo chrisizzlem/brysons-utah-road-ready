@@ -7,6 +7,10 @@ A mobile-first, single-page study app for the Utah written driver knowledge test
 - 50-question simulated exam mode
 - Topic practice and missed-question review
 - In-app reading of the official Utah handbook pages relevant to each question
+- Nine interactive visual lessons for high-value driving rules
+- Ten realistic Utah hazard-perception scenarios
+- Answer-by-answer reasoning after practice questions
+- Guided mistake recovery: related practice first, then a delayed retry
 - Local browser storage for progress, XP, streaks, scores, and readiness
 - Personalized encouragement for Bryson
 - Readiness estimate based on accuracy, topic coverage, and recent sessions

@@ -82,8 +82,18 @@
   const normal = (value) => String(value).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 
   function currentQuestion() {
+    if (window.ACTIVE_STUDY_QUESTION) return window.ACTIVE_STUDY_QUESTION;
     const heading = document.querySelector('.question h1');
     return heading && window.REVIEWED_QUESTIONS.find((question) => question.question === heading.textContent);
+  }
+
+  function findQuestion(id) {
+    if (window.ACTIVE_STUDY_QUESTION && window.ACTIVE_STUDY_QUESTION.id === id) return window.ACTIVE_STUDY_QUESTION;
+    return [
+      ...(window.REVIEWED_QUESTIONS || []),
+      ...(window.HAZARD_SCENARIOS || []),
+      ...(window.VISUAL_LESSONS || [])
+    ].find((question) => question.id === id);
   }
 
   function addHandbookLink() {
@@ -113,7 +123,7 @@
 
   let priorFocus = null;
   function openHandbook(id) {
-    const question = window.REVIEWED_QUESTIONS.find((item) => item.id === id);
+    const question = findQuestion(id);
     if (!question) return;
     const pages = pagesFor(question);
     priorFocus = document.activeElement;
