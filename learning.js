@@ -134,7 +134,13 @@
     return { ...lesson, question: lesson.prompt, explanation: lesson.lead };
   }
   function start(mode, category) {
-    if (mode === 'visual') run = lessons.map((lesson) => ({ kind: 'question', activity: 'visual', q: lessonQuestion(lesson) }));
+    if (mode === 'visual') run = lessons.flatMap((lesson, index) => {
+      const question = lessonQuestion(lesson);
+      return [
+        { kind: 'visual-intro', activity: 'visual-intro', q: question, lessonNumber: index + 1 },
+        { kind: 'question', activity: 'visual-check', q: question, lessonNumber: index + 1 }
+      ];
+    });
     else if (mode === 'hazard') run = hazards.map((hazard) => ({ kind: 'question', activity: 'hazard', q: { ...hazard, question: hazard.prompt, explanation: hazard.scene } }));
     else if (mode === 'recovery') run = recoveryRun();
     else run = smartQuestions(category).map((question) => ({ kind: 'question', activity: 'bank', q: question }));
@@ -178,7 +184,13 @@
     const item = run[position];
     if (!item) { finish(); return; }
     if (item.kind === 'recovery-intro') { renderRecoveryIntro(item); return; }
+    if (item.kind === 'visual-intro') { renderVisualIntro(item); return; }
     renderQuestion(item);
+  }
+  function renderVisualIntro(item) {
+    const question = item.q;
+    window.ACTIVE_STUDY_QUESTION = question;
+    $('#app').innerHTML = `<section class="session"><div class="top"><button class="btn plain" onclick="learningDash()">Exit</button><div class="progress"><i style="width:${position / run.length * 100}%"></i></div><b>Lesson ${item.lessonNumber}/${lessons.length}</b></div><article class="card visual-intro"><div class="eyebrow">Visual lesson · ${esc(question.category)}</div>${visual(question.type, question.title)}<h1>${esc(question.title)}</h1><p class="scene-copy">${esc(question.lead)}</p><ol class="teach-steps">${question.steps.map((step) => `<li>${esc(step)}</li>`).join('')}</ol><div class="row"><button class="btn primary" onclick="learningNext()">Try a quick check</button><button class="btn plain" data-handbook="${esc(question.id)}">Read handbook section</button></div></article></section>`;
   }
   function renderRecoveryIntro(item) {
     const question = item.question;
@@ -188,9 +200,9 @@
   function renderQuestion(item) {
     const question = item.q;
     window.ACTIVE_STUDY_QUESTION = question;
-    const mode = item.activity === 'hazard' ? 'Hazard Lab' : item.activity === 'visual' ? 'Visual lesson' : item.original ? 'Recovery check' : item.related ? 'Related practice' : question.category;
-    const lead = item.activity === 'hazard' ? `<p class="scene-copy">${esc(question.scene)}</p>` : item.activity === 'visual' ? `<p class="scene-copy">${esc(question.lead)}</p><ol class="teach-steps">${question.steps.map((step) => `<li>${esc(step)}</li>`).join('')}</ol>` : '';
-    $('#app').innerHTML = `<section class="session"><div class="top"><button class="btn plain" onclick="learningDash()">Exit</button><div class="progress"><i style="width:${position / run.length * 100}%"></i></div><b>${position + 1}/${run.length}</b></div><article class="card question teaching-question"><div class="eyebrow">${esc(mode)} · ${esc(question.category)}</div>${item.activity === 'hazard' || item.activity === 'visual' ? visual(question.type, question.title || question.scene) : ''}<h1>${esc(question.question)}</h1>${lead}<div class="options">${question.options.map((option, index) => `<button class="option" onclick="learningAnswer(${index})">${'ABCD'[index]}. ${esc(option)}</button>`).join('')}</div><div id="feedback" class="feedback"></div><button id="next" class="btn primary" style="display:none;margin-top:15px" onclick="learningNext()">${position === run.length - 1 ? 'Coach’s notes' : 'Next'}</button></article></section>`;
+    const mode = item.activity === 'hazard' ? 'Hazard Lab' : item.activity === 'visual-check' ? `Visual check · Lesson ${item.lessonNumber}/${lessons.length}` : item.original ? 'Recovery check' : item.related ? 'Related practice' : question.category;
+    const lead = item.activity === 'hazard' ? `<p class="scene-copy">${esc(question.scene)}</p>` : '';
+    $('#app').innerHTML = `<section class="session"><div class="top"><button class="btn plain" onclick="learningDash()">Exit</button><div class="progress"><i style="width:${position / run.length * 100}%"></i></div><b>${item.activity === 'visual-check' ? `Check ${item.lessonNumber}/${lessons.length}` : `${position + 1}/${run.length}`}</b></div><article class="card question teaching-question"><div class="eyebrow">${esc(mode)} · ${esc(question.category)}</div>${item.activity === 'hazard' || item.activity === 'visual-check' ? visual(question.type, question.title || question.scene) : ''}<h1>${esc(question.question)}</h1>${lead}<div class="options">${question.options.map((option, index) => `<button class="option" onclick="learningAnswer(${index})">${'ABCD'[index]}. ${esc(option)}</button>`).join('')}</div><div id="feedback" class="feedback"></div><button id="next" class="btn primary" style="display:none;margin-top:15px" onclick="learningNext()">${position === run.length - 1 ? 'Coach’s notes' : 'Next'}</button></article></section>`;
   }
   function distractorReason(question, index) {
     if (question.reasons) return question.reasons[index];
@@ -257,7 +269,7 @@
     window.ACTIVE_STUDY_QUESTION = null;
     const correct = answers.filter((answer) => answer.correct).length;
     const misses = answers.filter((answer) => !answer.correct);
-    state.sessions.push({ date: Date.now(), count: answers.length, pct: answers.length ? Math.round(correct / answers.length * 100) : 0, mode: run.some((item) => item.activity === 'hazard') ? 'hazard' : run.some((item) => item.activity === 'visual') ? 'visual' : 'practice' });
+    state.sessions.push({ date: Date.now(), count: answers.length, pct: answers.length ? Math.round(correct / answers.length * 100) : 0, mode: run.some((item) => item.activity === 'hazard') ? 'hazard' : run.some((item) => item.activity === 'visual-check') ? 'visual' : 'practice' });
     save();
     $('#app').innerHTML = `<section class="session"><article class="card"><div class="eyebrow">Coach’s notes</div><h1>${correct}/${answers.length} correct</h1><p>${repaired ? `You repaired ${repaired} previously missed rule${repaired === 1 ? '' : 's'} by answering related material before the original check.` : misses.length ? `The highest-value next work is ${[...new Set(misses.map((entry) => entry.question.category))].join(' and ')}. Those concepts are now scheduled for connected practice.` : 'Clean session. You strengthened recognition and retained the underlying rules.'}</p><div class="report"><b>${achievements().length ? `Earned: ${achievements().join(' · ')}` : 'Keep going—your next meaningful learning milestone is within reach.'}</b></div><div class="row"><button class="btn primary" onclick="learningStart('recovery')">Mistake recovery</button><button class="btn soft" onclick="learningStart('hazard')">Hazard Lab</button><button class="btn plain" onclick="learningDash()">Dashboard</button></div></article></section>`;
   }
